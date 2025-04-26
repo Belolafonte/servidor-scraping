@@ -6,6 +6,12 @@ app = Flask(__name__)
 # Inicializamos instaloader
 L = instaloader.Instaloader()
 
+# Ruta raíz para confirmar que el servidor está funcionando
+@app.route('/')
+def home():
+    return "Servidor en funcionamiento"
+
+# Ruta para obtener los seguidores
 @app.route('/seguidores/<usuario>', methods=['GET'])
 def obtener_seguidores(usuario):
     try:
@@ -23,4 +29,3 @@ if __name__ == '__main__':
     # Mensaje de inicio para confirmar que el servidor está corriendo
     print("Servidor iniciado correctamente en http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000)
-
