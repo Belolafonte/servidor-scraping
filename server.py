@@ -20,4 +20,6 @@ def obtener_seguidores(usuario):
         return jsonify({'error': f'No se pudo obtener los datos de seguidores. Error: {str(e)}'})
 
 if __name__ == '__main__':
+    # Mensaje de inicio para confirmar que el servidor está corriendo
+    print("Servidor iniciado correctamente en http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000)
