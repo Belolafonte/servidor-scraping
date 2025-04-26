@@ -4,6 +4,11 @@ import re
 
 app = Flask(__name__)
 
+
+@app.route('/')
+def home():
+    return "¡El servidor está funcionando!"
+    
 def get_instagram_followers(username):
     url = f"https://www.instagram.com/{username}/"
     headers = {
