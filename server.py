@@ -1,31 +1,46 @@
-import instaloader
 from flask import Flask, jsonify
+import requests
+from bs4 import BeautifulSoup
+import re
 
 app = Flask(__name__)
 
-# Inicializamos instaloader
-L = instaloader.Instaloader()
-
-# Ruta raíz para confirmar que el servidor está funcionando
 @app.route('/')
 def home():
-    return "Servidor en funcionamiento"
+    return jsonify({"mensaje": "Servidor de Seguidores Instagram funcionando correctamente 🚀"})
 
-# Ruta para obtener los seguidores
-@app.route('/seguidores/<usuario>', methods=['GET'])
-def obtener_seguidores(usuario):
+@app.route('/seguidores/<usuario>')
+def seguidores(usuario):
     try:
-        # Cargar la cuenta de Instagram
-        profile = instaloader.Profile.from_username(L.context, usuario)
+        url = f"https://www.instagram.com/{usuario}/"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
+        }
+        response = requests.get(url, headers=headers)
 
-        # Obtener el número de seguidores
-        followers = profile.followers
-        return jsonify({'seguidores': followers})
+        if response.status_code != 200:
+            return jsonify({"error": f"No se pudo acceder a la página de Instagram. Status code: {response.status_code}"}), 500
 
-    except instaloader.exceptions.InstaloaderException as e:
-        return jsonify({'error': f'No se pudo obtener los datos de seguidores. Error: {str(e)}'})
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        description = soup.find("meta", attrs={"name": "description"})
+        
+        if not description:
+            return jsonify({"error": "No se encontró la descripción del perfil."}), 500
+
+        content = description.get("content", "")
+        match = re.search(r"([\d,.]+) Followers", content)
+
+        if not match:
+            return jsonify({"error": "No se pudo encontrar el número de seguidores."}), 500
+
+        followers_text = match.group(1).replace(",", "").replace(".", "")
+        followers = int(followers_text)
+
+        return jsonify({"seguidores": followers})
+
+    except Exception as e:
+        return jsonify({"error": f"Excepción capturada: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    # Mensaje de inicio para confirmar que el servidor está corriendo
-    print("Servidor iniciado correctamente en http://0.0.0.0:5000")
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=10000)
