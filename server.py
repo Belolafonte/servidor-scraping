@@ -1,37 +1,41 @@
-import requests
+import http.client
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# Datos de tu API
-RAPIDAPI_HOST = "instagram230.p.rapidapi.com"
-RAPIDAPI_KEY = "7526c9822dmsh930262a907292e3p14e474jsn9031726bd6df"
-
 @app.route('/')
 def home():
-    return "Servidor en funcionamiento ✅"
+      return "Servidor en funcionamiento ✅"
 
 @app.route('/seguidores/<usuario>', methods=['GET'])
 def obtener_seguidores(usuario):
-    url = f"https://{RAPIDAPI_HOST}/user/details"
-    querystring = {"username": usuario}
-    
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": RAPIDAPI_HOST
-    }
-
     try:
-        response = requests.get(url, headers=headers, params=querystring)
-        data = response.json()
+        conn = http.client.HTTPSConnection("instagram230.p.rapidapi.com")
 
-        # ⚠️ Ajustamos a la estructura real de la respuesta JSON
-        seguidores = data["data"]["edge_followed_by"]["count"]
+        headers = {
+            'x-rapidapi-key': "TU_RAPIDAPI_KEY",
+            'x-rapidapi-host': "instagram230.p.rapidapi.com"
+        }
 
-        return jsonify({"seguidores": seguidores})
+        # Realizamos la petición para obtener los detalles del usuario
+        conn.request("GET", f"/user/details?username={usuario}", headers=headers)
+
+        res = conn.getresponse()
+        data = res.read()
+        json_data = data.decode("utf-8")
+
+        # Cargamos el JSON y extraemos el número de seguidores
+        import json
+        data_parsed = json.loads(json_data)
+
+        if 'data' in data_parsed:
+            seguidores = data_parsed['data']['user']['edge_followed_by']['count']
+            return jsonify({'seguidores': seguidores})
+        else:
+            return jsonify({'error': 'No se pudo obtener los datos de seguidores'})
 
     except Exception as e:
-        return jsonify({"error": f"No se pudo obtener los seguidores. Error: {str(e)}"})
+        return jsonify({'error': f'Error al obtener datos: {str(e)}'})
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host='0.0.0.0', port=5000)
