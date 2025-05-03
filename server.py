@@ -1,41 +1,49 @@
 import http.client
 from flask import Flask, jsonify
+import json
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-      return "Servidor en funcionamiento ✅"
+    return "Servidor en funcionamiento ✅✅✅"
 
 @app.route('/seguidores/<usuario>', methods=['GET'])
 def obtener_seguidores(usuario):
     try:
+        # Establecemos la conexión con la API
         conn = http.client.HTTPSConnection("instagram230.p.rapidapi.com")
 
         headers = {
-            'x-rapidapi-key': "TU_RAPIDAPI_KEY",
+            'x-rapidapi-key': "7526c9822dmsh930262a907292e3p14e474jsn9031726bd6df",  # Tu clave API aquí
             'x-rapidapi-host': "instagram230.p.rapidapi.com"
         }
 
-        # Realizamos la petición para obtener los detalles del usuario
+        # Hacemos la solicitud GET a la API de RapidAPI para obtener los detalles del usuario
         conn.request("GET", f"/user/details?username={usuario}", headers=headers)
 
+        # Obtenemos la respuesta
         res = conn.getresponse()
         data = res.read()
-        json_data = data.decode("utf-8")
 
-        # Cargamos el JSON y extraemos el número de seguidores
-        import json
-        data_parsed = json.loads(json_data)
+        # Decodificamos la respuesta
+        json_data = json.loads(data.decode("utf-8"))
 
-        if 'data' in data_parsed:
-            seguidores = data_parsed['data']['user']['edge_followed_by']['count']
-            return jsonify({'seguidores': seguidores})
+        # Verificamos si la respuesta contiene los seguidores
+        if 'data' in json_data and 'user' in json_data['data']:
+            followers_count = json_data['data']['user'].get('edge_followed_by', {}).get('count', None)
+            if followers_count is not None:
+                return jsonify({"seguidores": followers_count})
+            else:
+                return jsonify({"error": "No se pudo obtener el número de seguidores."})
         else:
-            return jsonify({'error': 'No se pudo obtener los datos de seguidores'})
+            return jsonify({"error": "Respuesta inesperada de la API."})
 
     except Exception as e:
-        return jsonify({'error': f'Error al obtener datos: {str(e)}'})
+        return jsonify({"error": f"No se pudo obtener los datos. Error: {str(e)}"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
+
+
+
