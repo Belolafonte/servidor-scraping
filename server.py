@@ -1,46 +1,37 @@
-from flask import Flask, jsonify
 import requests
-from bs4 import BeautifulSoup
-import re
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
+# Datos de tu API
+RAPIDAPI_HOST = "instagram230.p.rapidapi.com"
+RAPIDAPI_KEY = "7526c9822dmsh930262a907292e3p14e474jsn9031726bd6df"
+
 @app.route('/')
 def home():
-    return jsonify({"mensaje": "Servidor de Seguidores Instagram funcionando correctamente 🚀"})
+    return "Servidor en funcionamiento ✅"
 
-@app.route('/seguidores/<usuario>')
-def seguidores(usuario):
+@app.route('/seguidores/<usuario>', methods=['GET'])
+def obtener_seguidores(usuario):
+    url = f"https://{RAPIDAPI_HOST}/user/details"
+    querystring = {"username": usuario}
+    
+    headers = {
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": RAPIDAPI_HOST
+    }
+
     try:
-        url = f"https://www.instagram.com/{usuario}/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
-        }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=querystring)
+        data = response.json()
 
-        if response.status_code != 200:
-            return jsonify({"error": f"No se pudo acceder a la página de Instagram. Status code: {response.status_code}"}), 500
+        # ⚠️ Ajustamos a la estructura real de la respuesta JSON
+        seguidores = data["data"]["edge_followed_by"]["count"]
 
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        description = soup.find("meta", attrs={"name": "description"})
-        
-        if not description:
-            return jsonify({"error": "No se encontró la descripción del perfil."}), 500
-
-        content = description.get("content", "")
-        match = re.search(r"([\d,.]+) Followers", content)
-
-        if not match:
-            return jsonify({"error": "No se pudo encontrar el número de seguidores."}), 500
-
-        followers_text = match.group(1).replace(",", "").replace(".", "")
-        followers = int(followers_text)
-
-        return jsonify({"seguidores": followers})
+        return jsonify({"seguidores": seguidores})
 
     except Exception as e:
-        return jsonify({"error": f"Excepción capturada: {str(e)}"}), 500
+        return jsonify({"error": f"No se pudo obtener los seguidores. Error: {str(e)}"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(host="0.0.0.0", port=5000)
